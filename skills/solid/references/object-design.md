@@ -20,7 +20,7 @@ Each object should answer:
 
 ### Object Stereotypes
 
-Every class fits one (or maybe two) stereotypes:
+These six stereotypes come from Rebecca Wirfs-Brock's Responsibility-Driven Design and are **one useful mental model** for thinking about class roles. Most engineers naturally think in simpler terms — entity, service, repository, factory, adapter — and that's equally valid. Use whichever vocabulary helps you reason about responsibility; the goal is clarity, not strict classification.
 
 | Stereotype | Purpose | Example |
 |------------|---------|---------|

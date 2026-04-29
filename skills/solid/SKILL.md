@@ -24,11 +24,17 @@ You are now operating as a senior software engineer. Every line of code you writ
 
 The goal of software: Enable developers to **discover, understand, add, change, remove, test, debug, deploy**, and **monitor** features efficiently.
 
-## The Non-Negotiable Process
+## Context Matters
 
-### 1. ALWAYS Start with Tests (TDD)
+> **These principles scale with complexity.** In a 500-line script or a 3-endpoint microservice, most of this is overkill. In a large domain-heavy application, most of this is essential. A senior engineer's job is knowing which to apply and when. When in doubt, start simple and add structure when pain emerges.
 
-**Red-Green-Refactor is not optional:**
+The aggressive OO rules (value objects, first-class collections, max instance variables) are most valuable as **exercises** for building design intuition and as **production discipline** in complex domains. In simpler contexts, YAGNI and KISS are the defaults. Choose simplicity until complexity demands otherwise.
+
+## The Recommended Process
+
+### 1. Start with Tests (TDD) for Complex Logic
+
+**Red-Green-Refactor** is most valuable for business logic, algorithms, and complex interactions. For trivial CRUD, configuration, or exploratory code, apply judgment:
 
 ```
 1. RED    - Write a failing test that describes the behavior
@@ -36,7 +42,7 @@ The goal of software: Enable developers to **discover, understand, add, change, 
 3. REFACTOR - Clean up, remove duplication (Rule of Three)
 ```
 
-**The Three Laws of TDD:**
+**The Three Laws of TDD** (when practicing TDD discipline):
 1. You cannot write production code unless it makes a failing test pass
 2. You cannot write more test code than is sufficient to fail
 3. You cannot write more production code than is sufficient to pass
@@ -69,26 +75,29 @@ See: [references/solid-principles.md](references/solid-principles.md)
 5. **Searchability** - Unique, greppable names
 
 **Structure:**
-- One level of indentation per method
+- One level of indentation per method (as a guide — two is fine if it's clear)
 - No `else` keyword when possible (early returns)
-- When validating untrusted strings against an object/map, use `Object.hasOwn(...)` (or `Object.prototype.hasOwnProperty.call(...)`) — do not use the `in` operator, which matches prototype keys
-- **ALWAYS wrap primitives in domain objects** - IDs, emails, money amounts, etc.
-- First-class collections (wrap arrays in classes)
+- **Wrap primitives in domain objects when they carry validation, behavior, or risk of mix-up** — e.g., `Email` (validation), `Money` (currency logic), `UserId`/`OrderId` (preventing parameter transposition). Don't wrap every string just for ceremony.
+- First-class collections in complex domains (wrap arrays in classes when the collection has behavior)
 - One dot per line (Law of Demeter)
-- Keep entities small (< 50 lines for classes, < 10 for methods)
-- No more than two instance variables per class
+- Keep entities focused — if a class is growing large, check for multiple responsibilities
+- Cohesive classes often have 3–5 fields; the key is that each field serves the class's single responsibility
 
-**Value Objects are MANDATORY for:**
+**Wrap primitives when there's a reason:**
 ```typescript
-// ALWAYS create value objects for:
-class UserId { constructor(private readonly value: string) {} }
-class Email { constructor(private readonly value: string) { /* validate */ } }
+// WRAP when there's validation, behavior, or mix-up risk:
+class Email {
+  constructor(private readonly value: string) {
+    if (!isValidEmail(value)) throw new InvalidEmail(value);
+  }
+}
 class Money { constructor(private readonly amount: number, private readonly currency: string) {} }
-class OrderId { constructor(private readonly value: string) {} }
+// UserId + OrderId worth wrapping if passed together — prevents transposition bugs:
+function createOrder(userId: UserId, orderId: OrderId) { }
 
-// NEVER use raw primitives for domain concepts:
-// BAD: function createOrder(userId: string, email: string)
-// GOOD: function createOrder(userId: UserId, email: Email)
+// Don't wrap every primitive:
+// A simple internal string ID with no validation or behavior doesn't need a wrapper class.
+// Use judgment: does wrapping add clarity or safety, or just ceremony?
 ```
 
 See: [references/clean-code.md](references/clean-code.md)
@@ -99,13 +108,15 @@ See: [references/clean-code.md](references/clean-code.md)
 1. "What pattern is this?" (Entity, Service, Repository, Factory, etc.)
 2. "Is it doing too much?" (Check object calisthenics)
 
-**Object Stereotypes:**
+**Object Stereotypes** (one useful mental model among several):
 - **Information Holder** - Holds data, minimal behavior
 - **Structurer** - Manages relationships between objects
 - **Service Provider** - Performs work, stateless operations
 - **Coordinator** - Orchestrates multiple services
 - **Controller** - Makes decisions, delegates work
 - **Interfacer** - Transforms data between systems
+
+Most engineers naturally think in terms of entity, service, repository, factory, and adapter — that's equally valid. Use whichever model helps you reason about responsibility.
 
 See: [references/object-design.md](references/object-design.md)
 
@@ -148,7 +159,7 @@ In priority order:
 1. **Runs all the tests** - Must work correctly
 2. **Expresses intent** - Readable, reveals purpose
 3. **No duplication** - DRY (but Rule of Three)
-4. **Minimal** - Fewest classes, methods possible
+4. **Minimal** - Fewest classes, methods possible. Don't create abstractions until the complexity demands them — premature abstraction is as harmful as duplication.
 
 ## Code Smell Detection
 
@@ -246,10 +257,10 @@ After the code works:
 
 ## Red Flags - Stop and Rethink
 
-- Writing code without a test
-- Class with more than 2 instance variables
-- Method longer than 10 lines
-- More than one level of indentation
+- Writing complex business logic without a test
+- Class with many unrelated instance variables (check SRP)
+- Method so long it's hard to follow (consider extracting)
+- Deeply nested logic (3+ levels — consider extracting)
 - Using `else` when early return works
 - Hardcoding values that should be configurable
 - Creating abstractions before the third duplication

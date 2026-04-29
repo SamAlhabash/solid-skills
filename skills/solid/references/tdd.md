@@ -23,21 +23,21 @@ it('when adding 2 + 3, returns 5', () => { ... });
 ### GREEN Phase
 Write the **simplest possible code** to make the test pass. Two strategies:
 
-1. **Fake It** - Return a hardcoded value
-   ```typescript
-   add(a: number, b: number): number {
-     return 5; // Simplest thing!
-   }
-   ```
-
-2. **Obvious Implementation** - If you know the solution
+1. **Obvious Implementation** - When you know the solution, just write it
    ```typescript
    add(a: number, b: number): number {
      return a + b;
    }
    ```
 
-**Prefer Fake It** when learning or unsure. Let more tests drive the real implementation.
+2. **Fake It** - Return a hardcoded value when the path forward is unclear
+   ```typescript
+   add(a: number, b: number): number {
+     return 5; // Hardcoded — let the next test force generalization
+   }
+   ```
+
+**Prefer Obvious Implementation** when the solution is clear. Use **Fake It** as a learning technique when practicing TDD katas or when genuinely unsure of the correct implementation. Let more tests drive the real implementation.
 
 ### REFACTOR Phase
 This is where **design happens**. Look for:
@@ -71,6 +71,8 @@ Each new test "sculpts" the solution toward a general, robust implementation.
 Think of **degrees of freedom** - like a car that needs forward/back, left/right, and rotation. Each test carves out one degree of freedom until the implementation handles all cases.
 
 ## Transformation Priority Premise
+
+> **Note:** This is a theoretical framework from Robert C. Martin. It's interesting as a conceptual model but not something most practitioners actively use during day-to-day TDD. Listed here for completeness.
 
 When going from RED to GREEN, prefer simpler transformations:
 
