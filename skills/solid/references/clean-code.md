@@ -111,7 +111,7 @@ class User { }
 
 ## Object Calisthenics (9 Rules)
 
-Exercises to improve OO design. Follow strictly during practice, relax slightly in production.
+These are **exercises for building design intuition**, not production mandates. Practicing them strictly sharpens your sense of cohesion, encapsulation, and single responsibility. In production, apply judgment: the goal is code that is clear and maintainable, not code that scores 9/9 on calisthenics.
 
 ### 1. One Level of Indentation per Method
 
@@ -162,13 +162,10 @@ function getDiscount(user: User): number {
 
 ### 3. Wrap All Primitives and Strings
 
-Primitives should be wrapped in domain objects when they have meaning.
+Wrap primitives in domain objects **when they carry validation, behavior, or risk of mix-up**. Don't wrap every string just for ceremony.
 
 ```typescript
-// BAD: Primitive obsession
-function createUser(email: string, age: number) { }
-
-// GOOD: Value objects
+// GOOD: Wrapping adds value — validation + prevents transposition bugs
 class Email {
   constructor(private value: string) {
     if (!this.isValid(value)) throw new InvalidEmail();
@@ -183,21 +180,18 @@ class Age {
 }
 
 function createUser(email: Email, age: Age) { }
+
+// EXERCISE (not always production-appropriate):
+// Wrapping every string ID (e.g., a simple internal reference with no validation
+// or risk of mix-up) adds indirection without benefit. Apply judgment.
 ```
 
 ### 4. First-Class Collections
 
-Any class with a collection should have no other instance variables.
+When a collection has its own behavior (filtering, totaling, invariants), extract it into its own class. In complex domains this prevents logic from leaking into callers. For simple CRUD, an `Order` with both `items: OrderItem[]` and `customerId` is perfectly fine — don't extract collections just to follow the rule.
 
 ```typescript
-// BAD: Collection mixed with other state
-class Order {
-  items: OrderItem[] = [];
-  customerId: string;
-  total: number;
-}
-
-// GOOD: Collection is its own class
+// GOOD in complex domains: OrderItems has its own behavior
 class OrderItems {
   constructor(private items: OrderItem[] = []) {}
 
@@ -211,6 +205,12 @@ class Order {
     private items: OrderItems,
     private customerId: CustomerId
   ) {}
+}
+
+// Fine in simpler contexts:
+class Order {
+  items: OrderItem[] = [];
+  customerId: string;
 }
 ```
 
@@ -242,59 +242,56 @@ const order = new Order();
 
 ### 7. Keep All Entities Small
 
-- Classes: < 50 lines
-- Methods: < 10 lines
-- Files: < 100 lines
+This is an **exercise rule** to develop the habit of splitting responsibilities early. In production, focus on the underlying principle: if a class is growing large, check whether it has multiple responsibilities and split if so. Specific size limits are a heuristic, not a law.
 
-If larger, it's probably doing too much. Split it.
+- Classes growing beyond ~100–150 lines are worth reviewing for SRP
+- Methods that don't fit on one screen are worth considering for extraction
+- Files with many unrelated classes can usually be split by concept
+
+If a class is 60 lines and has one clear responsibility, it's fine. If it's 40 lines and does three things, it needs splitting.
 
 ### 8. No Classes with More Than Two Instance Variables
 
-Forces small, focused classes.
+This is an **exercise rule only** — not a production mandate. Practicing it forces you to decompose classes aggressively and builds intuition for cohesion. In production, a cohesive class with 3–5 related fields is perfectly fine. The real signal is whether the fields belong together under one responsibility, not whether you've hit an arbitrary count.
 
 ```typescript
-// BAD: Too many variables
-class Order {
-  id: string;
-  customerId: string;
-  items: Item[];
-  total: number;
-  status: string;
-}
-
-// GOOD: Composed of smaller objects
+// Exercise: Forces decomposition to build intuition
 class Order {
   constructor(
     private id: OrderId,
-    private details: OrderDetails
+    private details: OrderDetails  // 2 variables max in exercise
   ) {}
 }
 
-class OrderDetails {
+// Production: This is fine if these fields are cohesive
+class Order {
   constructor(
-    private customer: Customer,
-    private lineItems: LineItems
+    private id: OrderId,
+    private customerId: CustomerId,
+    private items: OrderItem[],
+    private status: OrderStatus,
+    private createdAt: Date
   ) {}
 }
 ```
 
 ### 9. No Getters/Setters/Properties
 
-Objects should have behavior, not just data. Tell objects what to do.
+The principle: **prefer behavior-rich objects over data bags**. Objects should tell you what they can do, not just expose their fields. In practice, DTOs, serialization, and framework integration often legitimately need getters — that's fine. The smell to avoid is a class that only has getters/setters and pushes all logic into its callers.
 
 ```typescript
-// BAD: Data bag with getters
+// BAD: Data bag — logic lives in the caller
 class Account {
   getBalance(): number { return this.balance; }
   setBalance(value: number) { this.balance = value; }
 }
 
-// Caller does the work
+// Caller does the work (fragile, scattered logic)
 if (account.getBalance() >= amount) {
   account.setBalance(account.getBalance() - amount);
 }
 
-// GOOD: Behavior-rich object
+// GOOD: Behavior-rich object — logic lives in the object
 class Account {
   withdraw(amount: Money): WithdrawResult {
     if (!this.canWithdraw(amount)) {
@@ -307,6 +304,11 @@ class Account {
 
 // Caller tells, object decides
 const result = account.withdraw(amount);
+
+// Fine: DTOs with getters for serialization or framework integration
+class UserDTO {
+  constructor(readonly id: string, readonly email: string) {}
+}
 ```
 
 ---
